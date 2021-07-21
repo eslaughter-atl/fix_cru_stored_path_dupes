@@ -103,7 +103,7 @@ WHERE  conv.new_id <> conv.old_id;
 
 -- recalculate hashes as customer has manually changed paths
 UPDATE dbo.cru_stored_path
-SET    cru_hash = CONVERT(NVARCHAR(128), Hashbytes('SHA2_256', cru_path), 2);
+SET    cru_hash = CONVERT(NVARCHAR(128), Hashbytes('SHA2_256', cast(cru_path as varchar(1000))), 2);
 
 -- drop conversion tables
 DROP TABLE dbo.tmp_cru_stored_path_conversion;
