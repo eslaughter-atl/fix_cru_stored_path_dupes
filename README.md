@@ -36,6 +36,7 @@ Lastly - re-calculates the hash data in cru_stored_path.cru_hash.
 - MSSQL
 - Oracle 12c
 - PostgreSQL
+- MySQL
 
 ### Support ###
 
