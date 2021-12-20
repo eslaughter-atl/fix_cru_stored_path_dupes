@@ -39,14 +39,18 @@ UPDATE cru_patch_revision pr
     ON pr.cru_revision_id = conv.old_id
    SET cru_revision_id = conv.new_id;
 
-  DELETE
-    FROM cru_fr_detail
-   WHERE cru_revision_id IN 
- (SELECT fd.cru_revision_id
-    FROM (SELECT cru_revision_id FROM cru_fr_detail) fd
-    JOIN tmp_cru_revision_conversion conv 
-      ON fd.cru_revision_id = conv.old_id
-     AND conv.new_id <> conv.old_id);
+CREATE TABLE tmp_cru_fr_detail_deletion (cru_revision_id INT);
+
+INSERT INTO tmp_cru_fr_detail_deletion (cru_revision_id)
+  (SELECT fd.cru_revision_id FROM cru_fr_detail fd
+   JOIN tmp_cru_revision_conversion conv ON fd.cru_revision_id = conv.old_id
+   AND conv.new_id <> conv.old_id);
+
+DELETE cru_fr_detail FROM cru_fr_detail
+JOIN tmp_cru_fr_detail_deletion
+ON cru_fr_detail.cru_revision_id = tmp_cru_fr_detail_deletion.cru_revision_id;
+
+DROP TABLE tmp_cru_fr_detail_deletion;
 
 UPDATE cru_frx_revision fr
   JOIN tmp_cru_revision_conversion conv 
@@ -62,27 +66,35 @@ UPDATE cru_revision rev
     ON rev.cru_path = conv.old_id
    SET rev.cru_path = conv.new_id;
 
- DELETE
-   FROM cru_revision
-  WHERE cru_revision_id IN
-(SELECT r.cru_revision_id
-   FROM (SELECT cru_revision_id FROM cru_revision) r
-   JOIN tmp_cru_revision_conversion conv 
-     ON r.cru_revision_id = conv.old_id
-    AND conv.new_id <> conv.old_id);
+CREATE TABLE tmp_cru_revision_deletion (cru_revision_id INT);
+
+INSERT INTO tmp_cru_revision_deletion (cru_revision_id)
+  (SELECT r.cru_revision_id FROM cru_revision r
+   JOIN tmp_cru_revision_conversion conv ON r.cru_revision_id = conv.old_id
+   AND conv.new_id <> conv.old_id);
+
+DELETE cru_revision FROM cru_revision
+JOIN tmp_cru_revision_deletion
+ON cru_revision.cru_revision_id = tmp_cru_revision_deletion.cru_revision_id;
+
+DROP TABLE tmp_cru_revision_deletion;
 
 ALTER TABLE cru_revision ADD CONSTRAINT uk_crurevision_spr UNIQUE (cru_source_name, cru_path, cru_revision);
 
 -- remove duplicates from cru_stored_path
- 
- DELETE
-   FROM cru_stored_path
-  WHERE cru_path_id IN
-(SELECT csp.cru_path_id
-   FROM (SELECT cru_path_id FROM cru_stored_path) csp
-   JOIN tmp_cru_stored_path_conversion conv
-     ON csp.cru_path_id = conv.old_id
-    AND conv.new_id <> conv.old_id);
+
+CREATE TABLE tmp_cru_stored_path_deletion (cru_path_id INT);
+
+INSERT INTO tmp_cru_stored_path_deletion (cru_path_id)
+  (SELECT csp.cru_path_id FROM cru_stored_path csp
+   JOIN tmp_cru_stored_path_conversion conv ON csp.cru_path_id = conv.old_id
+   AND conv.new_id <> conv.old_id);
+
+DELETE cru_stored_path FROM cru_stored_path
+JOIN tmp_cru_stored_path_deletion
+ON cru_stored_path.cru_path_id = tmp_cru_stored_path_deletion.cru_path_id;
+
+DROP TABLE tmp_cru_stored_path_deletion;
 
 -- recalculate hashes
 
